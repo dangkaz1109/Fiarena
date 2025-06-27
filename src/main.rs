@@ -30,8 +30,8 @@ impl PoolAlloc {
 	for i in 1..number {	
 	    let ptr = unsafe {start_pool.add(i*size)};
 	    let new_block = Box::new(Block::new(ptr));
-		tail = Box::into_raw(new_block);
 	    let new_block_ptr = Box::into_raw(new_block);
+		tail = new_block_ptr;
 	    current.next = new_block_ptr;
 	    current = unsafe {
 		&mut *new_block_ptr
@@ -59,11 +59,22 @@ impl PoolAlloc {
 	}
 
 	fn deallocate(&mut self, ptr: *mut u8) {
-		
+		let refresh_block = Box::new(Block::new(ptr));
+		let tail = unsafe { &mut *self.tail};
+		let refresh_raw = Box::into_raw(refresh_block);
+		tail.next = refresh_raw;
+		self.tail = refresh_raw;
 	}	
 
 }
 fn main() {
-    println!("uuhhhHello, world!");
+    let mut pool_allocator = PoolAlloc::new(1000, 32);
+	let ptr = pool_allocator.allocate() as *mut f32;
+	unsafe {
+		ptr.write(100.0);
+		let x = *ptr;
+		println!("{:?}", x);
+	}
+
 }
 
