@@ -70,7 +70,7 @@ impl PoolAlloc {
 
 
 struct MultiPool {
-    pool_set: Vec<PoolAlloc>;
+    pool_set: Vec<PoolAlloc>
 }
 impl MultiPool {
     fn new(number: usize)-> Self {
@@ -84,20 +84,26 @@ impl MultiPool {
             ]
         }
     }
-    fn allocate(&mut self, size) -> *mut u8 {
+    fn allocate(&mut self, size_: usize) -> *mut u8 {
         if self.pool_set.len() == 0 {
             panic!("Error")
         }
-        for i in self.pool_set {
-            if i.size >= size {
-                return i.allocate()
-                break
+        for pool in &mut self.pool_set {
+            if pool.block_size >= size_ {
+                return pool.allocate();
             }
         }
+		panic!("No suitable block size found for size {}", size_);
     }
 
-    fn deallocate(&self) {
-        
+    fn deallocate<T>(&mut self, ptr: *mut T) {
+		let size = std::mem::size_of::<T>();
+		for pool in &mut self.pool_set {
+			if pool.block_size == size {
+				pool.deallocate(ptr as *mut u8);
+				return
+			}
+		}
     }
 
 }
@@ -105,13 +111,8 @@ impl MultiPool {
 
 
 fn main() {
-    let mut pool_allocator = PoolAlloc::new(1000, 32);
-	let ptr = pool_allocator.allocate() as *mut f32;
-	unsafe {
-		ptr.write(100.0);
-		let x = *ptr;
-		println!("{:?}", x);
-	}
-
+	let mut pool = MultiPool::new(10);
+	let ptr = pool.allocate(8);
+	pool.deallocate(ptr);
 }
 
