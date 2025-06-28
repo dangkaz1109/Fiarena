@@ -67,6 +67,43 @@ impl PoolAlloc {
 	}	
 
 }
+
+
+struct MultiPool {
+    pool_set: Vec<PoolAlloc>;
+}
+impl MultiPool {
+    fn new(number: usize)-> Self {
+        Self {
+            pool_set:  vec![
+                PoolAlloc::new(8, number),
+                PoolAlloc::new(16, number),
+                PoolAlloc::new(32, number),
+                PoolAlloc::new(64, number),
+                PoolAlloc::new(128, number),
+            ]
+        }
+    }
+    fn allocate(&mut self, size) -> *mut u8 {
+        if self.pool_set.len() == 0 {
+            panic!("Error")
+        }
+        for i in self.pool_set {
+            if i.size >= size {
+                return i.allocate()
+                break
+            }
+        }
+    }
+
+    fn deallocate(&self) {
+        
+    }
+
+}
+
+
+
 fn main() {
     let mut pool_allocator = PoolAlloc::new(1000, 32);
 	let ptr = pool_allocator.allocate() as *mut f32;
